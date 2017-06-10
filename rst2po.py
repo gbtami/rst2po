@@ -159,11 +159,23 @@ class Application(Gtk.Application):
         self.po_listbox.insert(row, i)
 
     def read_rst(self, rst):
+        # we don't want to merge lines starting
+        # with section markup and code blocks
+        throwaway = ["---", "===", "***", ".. ", "   "]
+
         with open(rst, "r") as f:
             para = ""
             for line in f:
                 if line.strip():
-                    if line[0:3] not in ("---", "===", "***", ".. ", "   "):
+                    # footnote translations are indented sometimes
+                    if line.startswith(".. rubric:: Lábjegyzet"):
+                        line = line[12:]
+                        throwaway = throwaway[0:3]
+                        continue
+
+                    # don't collect section markup and code blocks
+                    if line[0:3] not in throwaway:
+                        # drop bullet list markers
                         if line.startswith("* "):
                             line = line[2:]
                         para += line.lstrip()
@@ -212,11 +224,12 @@ class Application(Gtk.Application):
         idx = selected_row.get_index()
 
         if self.messages[idx][1].startswith('msgid ""'):
-            para_lines = 'msgstr ""\n'
+            para_lines = ""
             for line in para.splitlines():
                 if line:
                     para_lines += '"%s "\n' % line
-            self.messages[idx][2] = para_lines + "\n"
+            para_lines = para_lines.strip() + "\n"
+            self.messages[idx][2] = self.messages[idx][2] + para_lines
         else:
             self.messages[idx][2] = 'msgstr "%s"\n\n' % para.strip()
 
