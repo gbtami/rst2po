@@ -68,6 +68,9 @@ class Application(Gtk.Application):
         self.window.show_all()
 
     def on_save(self, action, param):
+        """ Save merged translation messages under /merged dir
+            using the same .po name """
+
         merged = join(dirname(abspath(self.po)), "merged")
         if not isdir("merged"):
             os.mkdir(merged)
@@ -86,6 +89,7 @@ class Application(Gtk.Application):
         self.quit()
 
     def read_po(self, po):
+        """ Add [source, msgid, msgstr] from .po to left side ListBox """
         heading = True
 
         with open(po, "r") as f:
@@ -162,6 +166,8 @@ class Application(Gtk.Application):
         self.po_listbox.insert(row, i)
 
     def read_rst(self, rst):
+        """ Add translated text paragraphs to right side ListBox """
+
         # we don't want to merge lines starting
         # with section markup and code blocks
         throwaway = ["---", "===", "***", ".. ", "   "]
@@ -213,6 +219,9 @@ class Application(Gtk.Application):
         self.rst_listbox.select_row(self.rst_listbox.get_row_at_index(0))
 
     def on_add_button_clicked(self, widget):
+        """ Add translated text from clicked paragraph
+            to currently selected existing translated text.
+        """
         i = widget.get_label()
         rst_idx = int(i)
         self.rst_listbox.select_row(self.rst_listbox.get_row_at_index(rst_idx))
@@ -227,13 +236,16 @@ class Application(Gtk.Application):
         idx = selected_row.get_index()
 
         if self.messages[idx][1].startswith('msgid ""'):
+            # multiline translatable text
             para_lines = ""
             for line in para.splitlines():
                 if line.strip():
                     para_lines += '"%s "\n' % line
             para_lines = para_lines.strip() + "\n\n"
-            self.messages[idx][2] = self.messages[idx][2].strip() + "\n" + para_lines
+            new_text = self.messages[idx][2].strip() + "\n" + para_lines
+            self.messages[idx][2] = new_text
         else:
+            # oneliner
             self.messages[idx][2] = 'msgstr "%s"\n\n' % para.strip()
 
         self.po_listbox.remove(selected_row)
@@ -246,6 +258,8 @@ class Application(Gtk.Application):
         self.po_listbox.show_all()
 
     def on_remove_button_clicked(self, widget):
+        """ Remove translated text """
+
         i = widget.get_label()
         idx = int(i)
         self.messages[idx][2] = 'msgstr ""\n'
