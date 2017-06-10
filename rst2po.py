@@ -77,6 +77,9 @@ class Application(Gtk.Application):
             for msg in self.messages:
                 f.write(msg[0])
                 f.write(msg[1])
+                # remove latest extra space
+                if msg[2].endswith(' "\n\n'):
+                    msg[2] = msg[2][:-4] + '"\n\n'
                 f.write(msg[2])
 
     def on_quit(self, action, param):
@@ -226,10 +229,10 @@ class Application(Gtk.Application):
         if self.messages[idx][1].startswith('msgid ""'):
             para_lines = ""
             for line in para.splitlines():
-                if line:
+                if line.strip():
                     para_lines += '"%s "\n' % line
-            para_lines = para_lines.strip() + "\n"
-            self.messages[idx][2] = self.messages[idx][2] + para_lines
+            para_lines = para_lines.strip() + "\n\n"
+            self.messages[idx][2] = self.messages[idx][2].strip() + "\n" + para_lines
         else:
             self.messages[idx][2] = 'msgstr "%s"\n\n' % para.strip()
 
